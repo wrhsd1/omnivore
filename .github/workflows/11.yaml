@@ -144,5 +144,13 @@ jobs:
           tags: |
              wrhsd/omnivore-cloud:latest    
   
-      
+      -
+        name: Build and push db docker image
+        uses: docker/build-push-action@v2
+        with:
+          file: packages/db/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+             wrhsd/omnivore-db:latest          
         
