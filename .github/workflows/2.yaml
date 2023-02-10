@@ -1,4 +1,4 @@
-name: Run tests1
+name: Run tests2
 on:
   workflow_dispatch:
   push:
@@ -109,7 +109,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: packages/api/Dockerfile
-          platforms: linux/amd64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: |
              wrhsd/omnivore-api:latest    
@@ -119,7 +119,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: packages/content-fetch/Dockerfile
-          platforms: linux/amd64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: |
              wrhsd/omnivore-fetch:latest    
@@ -129,7 +129,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: packages/inbound-email-handler/Dockerfile
-          platforms: linux/amd64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: |
              wrhsd/omnivore-inbound:latest    
@@ -139,7 +139,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: packages/content-fetch/Dockerfile-gcf
-          platforms: linux/amd64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: |
              wrhsd/omnivore-cloud:latest    
@@ -149,7 +149,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: packages/db/Dockerfile
-          platforms: linux/amd64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: |
              wrhsd/omnivore-db:latest          
@@ -159,7 +159,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: packages/web/Dockerfile
-          platforms: linux/amd64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: |
              wrhsd/omnivore-web:latest          
@@ -170,7 +170,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: packages/rule-handler/Dockerfile
-          platforms: linux/amd64
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: |
              wrhsd/omnivore-handler:latest   
