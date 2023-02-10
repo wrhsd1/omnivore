@@ -1,1 +1,152 @@
-ads
+name: Run tests1
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'apple/**'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'apple/**'
+
+jobs:
+  run-code-tests:
+    name: Run Codebase tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432
+      elastic:
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
+        env:
+          discovery.type: single-node
+          http.cors.allow-origin: '*'
+          http.cors.enabled: true
+          http.cors.allow-headers: 'X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization'
+          http.cors.allow-credentials: true
+        options: >-
+          --health-cmd "curl http://0.0.0.0:9200/_cluster/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 9200
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Initialize the database
+        run: |
+          cp ./packages/api/.env.test ./packages/api/.env
+          psql --host localhost --port ${{ job.services.postgres.ports[5432] }} --user postgres --password -c "CREATE DATABASE omnivore_test;"
+        env:
+          PGPASSWORD: postgres
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14.18
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(source ~/.nvm/nvm.sh && yarn cache dir)"
+      - name: Install dependencies
+        run: |
+          source ~/.nvm/nvm.sh
+          yarn install --frozen-lockfile
+      - name: Database Migration
+        run: |
+          yarn workspace @omnivore/db migrate
+          psql -h localhost -p ${{ job.services.postgres.ports[5432] }} -U postgres -c "CREATE USER app_user WITH ENCRYPTED PASSWORD 'app_pass';GRANT omnivore_user to app_user;"
+        env:
+          PG_HOST: localhost
+          PG_PORT: ${{ job.services.postgres.ports[5432] }}
+          PG_USER: postgres
+          PG_PASSWORD: postgres
+          PG_DB: omnivore_test
+          ELASTIC_URL: http://localhost:${{ job.services.elastic.ports[9200] }}/
+          PGPASSWORD: postgres # This is required for the psql command to work without a password prompt
+      - name: TypeScript, Lint, Tests
+        run: |
+          source ~/.nvm/nvm.sh
+          yarn build
+          yarn lint
+          yarn test
+        env:
+          PG_HOST: localhost
+          PG_PORT: ${{ job.services.postgres.ports[5432] }}
+          PG_USER: app_user
+          PG_PASSWORD: app_pass
+          PG_DB: omnivore_test
+          PG_POOL_MAX: 10
+          ELASTIC_URL: http://localhost:${{ job.services.elastic.ports[9200] }}/
+  build-docker-images:
+    name: Build docker images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+ 
+      -
+        name: Build and push API docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: docker/php
+          file: packages/api/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+             wrhsd/omnivore-api:latest    
+ 
+      -
+        name: Build and push content-fetch docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: docker/php
+          file: packages/content-fetch/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+             wrhsd/omnivore-fetch:latest    
+ 
+      -
+        name: Build and push inbound-email-handler docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: docker/php
+          file: packages/inbound-email-handler/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+             wrhsd/omnivore-inbound:latest    
+ 
+      -
+        name: Build and push content-fetch cloud function docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: docker/php
+          file: packages/content-fetch/Dockerfile-gcf
+          platforms: linux/amd64
+          push: true
+          tags: |
+             wrhsd/omnivore-cloud:latest    
+  
+      
+        
