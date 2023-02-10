@@ -108,7 +108,6 @@ jobs:
         name: Build and push API docker image
         uses: docker/build-push-action@v2
         with:
-          context: docker/php
           file: packages/api/Dockerfile
           platforms: linux/amd64
           push: true
@@ -119,7 +118,6 @@ jobs:
         name: Build and push content-fetch docker image
         uses: docker/build-push-action@v2
         with:
-          context: docker/php
           file: packages/content-fetch/Dockerfile
           platforms: linux/amd64
           push: true
@@ -130,7 +128,6 @@ jobs:
         name: Build and push inbound-email-handler docker image
         uses: docker/build-push-action@v2
         with:
-          context: docker/php
           file: packages/inbound-email-handler/Dockerfile
           platforms: linux/amd64
           push: true
@@ -141,7 +138,6 @@ jobs:
         name: Build and push content-fetch cloud function docker image
         uses: docker/build-push-action@v2
         with:
-          context: docker/php
           file: packages/content-fetch/Dockerfile-gcf
           platforms: linux/amd64
           push: true
