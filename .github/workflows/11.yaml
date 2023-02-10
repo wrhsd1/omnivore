@@ -153,4 +153,24 @@ jobs:
           push: true
           tags: |
              wrhsd/omnivore-db:latest          
-        
+ 
+      -
+        name: Build and push web docker image
+        uses: docker/build-push-action@v2
+        with:
+          file: packages/web/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+             wrhsd/omnivore-web:latest          
+           
+
+      -
+        name: Build and push handler docker image
+        uses: docker/build-push-action@v2
+        with:
+          file: packages/rule-handler/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+             wrhsd/omnivore-handler:latest   
